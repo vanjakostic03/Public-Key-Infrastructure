@@ -4,7 +4,6 @@ import com.ftn.pki.dtos.users.CreateUserDTO;
 import com.ftn.pki.dtos.users.CreatedUserDTO;
 import com.ftn.pki.dtos.users.SimpleUserDTO;
 import com.ftn.pki.services.users.UserService;
-import org.hibernate.sql.ast.tree.expression.Collation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
