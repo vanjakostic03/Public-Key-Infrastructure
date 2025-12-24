@@ -1,7 +1,6 @@
 package com.ftn.pki.configuration;
 
 import com.ftn.pki.security.RestAuthenticationEntryPoint;
-import com.ftn.pki.util.TokenUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,8 +18,6 @@ public class SecurityConfig {
     @Autowired
     private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
-    @Autowired
-    private TokenUtil tokenUtils;
 
 
     @Bean
