@@ -34,7 +34,7 @@ public class UserService {
     }
 
     public List<SimpleUserDTO> findByType(UserType type) {
-        List<User> users = userRepository.findByType(type);
+        List<User> users = userRepository.findByUserType(type);
 
         return userMapper.fromUserListToSimpleUserDTOList(users);
     }
