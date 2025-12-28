@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { AppComponent } from './app.component';
 import {AppRoutingModule} from './app-routing.module';
+import {AuthenticationModule} from './authentication/authentication.module';
 
 @NgModule({
   declarations: [
@@ -9,7 +10,8 @@ import {AppRoutingModule} from './app-routing.module';
   ],
   imports: [
     BrowserModule,
-    AppRoutingModule
+    AppRoutingModule,
+    AuthenticationModule,
   ],
   providers: [],
   bootstrap: [AppComponent]
