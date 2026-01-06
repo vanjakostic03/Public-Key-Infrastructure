@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import jwtDecode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import {DecodedToken} from './models/DecodedToken.model';
 
 @Injectable({
@@ -14,6 +14,8 @@ export class UserService {
   getToken(): string | null {
     return localStorage.getItem('authToken');
   }
+
+
 
   getUserData(): any | null {
     const token = this.getToken();
