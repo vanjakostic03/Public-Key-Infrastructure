@@ -1,26 +1,23 @@
-import { Component } from '@angular/core';
-import {ActivatedRoute, RouterOutlet} from '@angular/router';
+import {Component, OnInit} from '@angular/core';
 import {AuthService} from './authentication/auth.service';
+import {UserService} from './authentication/user.service';
 
 @Component({
   selector: 'app-root',
-  // standalone: true,
-  // imports: [RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
-export class AppComponent {
-  title = 'PKI-frontend';
-
-  constructor(private route: ActivatedRoute, private authService: AuthService) {}
+export class AppComponent implements OnInit {
+  constructor(private auth: AuthService, private user: UserService) {}
 
   ngOnInit() {
-    this.route.queryParams.subscribe(params => {
-      const code = params['code'];
-      console.log("upao " + code);
-      if (code) {
-        this.authService.exchangeCode(code);
-      }
-    });
+    const url = new URL(window.location.href);
+    const code = url.searchParams.get('code');
+
+    if (code) {
+      this.auth.exchangeCode(code);
+    } else if (!this.user.hasToken()) {
+      this.auth.login();
+    }
   }
 }

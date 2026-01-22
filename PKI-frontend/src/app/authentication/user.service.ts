@@ -1,40 +1,23 @@
-import { Injectable } from '@angular/core';
-import { jwtDecode } from 'jwt-decode';
-import {DecodedToken} from './models/DecodedToken.model';
 
-@Injectable({
-  providedIn: 'root'
-})
+import { Injectable } from '@angular/core';
+
+@Injectable({ providedIn: 'root' })
 export class UserService {
+  private tokenKey = 'authToken';
 
   storeToken(token: string): void {
-    localStorage.setItem('authToken', token);
+    localStorage.setItem(this.tokenKey, token);
   }
 
   getToken(): string | null {
-    return localStorage.getItem('authToken');
-  }
-
-
-
-  getUserData(): any | null {
-    const token = this.getToken();
-    if (!token) return null;
-
-    try {
-      const decoded = jwtDecode<DecodedToken>(token);
-      return {
-        id: decoded.id,
-        role: decoded.role,
-        email: decoded['sub'],
-      };
-    } catch (error) {
-      console.error('Error decoding token:', error);
-      return null;
-    }
+    return localStorage.getItem(this.tokenKey);
   }
 
   clearToken(): void {
-    localStorage.removeItem('authToken');
+    localStorage.removeItem(this.tokenKey);
+  }
+
+  hasToken(): boolean {
+    return !!this.getToken();
   }
 }
