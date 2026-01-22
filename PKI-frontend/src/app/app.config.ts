@@ -1,10 +1,9 @@
-import { ApplicationConfig} from '@angular/core';
+import {APP_INITIALIZER, ApplicationConfig} from '@angular/core';
 import {provideRouter} from '@angular/router';
 import {routes} from './app-routing.module';
 import {provideHttpClient, withInterceptors} from '@angular/common/http';
 import {authInterceptorFn} from './authentication/auth.interceptor';
 import {AuthService} from './authentication/auth.service';
-import {UserService} from './authentication/user.service';
 
 
 export function initAuth(auth: AuthService) {
@@ -16,7 +15,12 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(withInterceptors([authInterceptorFn])),
     AuthService,
-    UserService,
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initAuth,
+      multi: true,
+      deps: [AuthService],
+    },
   ]
 };
 

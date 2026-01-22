@@ -13,10 +13,9 @@ export class AppComponent implements OnInit {
   ngOnInit() {
     const url = new URL(window.location.href);
     const code = url.searchParams.get('code');
-
     if (code) {
       this.auth.exchangeCode(code);
-    } else if (!this.user.hasToken()) {
+    } else if (!this.auth.hasToken()) {
       this.auth.login();
     }
   }
