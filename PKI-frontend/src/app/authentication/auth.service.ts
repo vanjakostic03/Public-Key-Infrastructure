@@ -52,6 +52,7 @@ export class AuthService {
       sessionStorage.removeItem('pkce_verifier');
       window.history.replaceState({}, '', this.redirectUri);
     });
+
   }
 
 
