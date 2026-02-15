@@ -3,6 +3,8 @@ import com.ftn.pki.crypto.Issuer;
 import com.ftn.pki.crypto.Subject;
 import com.ftn.pki.dtos.certificates.CertificateRequest;
 import com.ftn.pki.dtos.certificates.CertificateResponse;
+import com.ftn.pki.dtos.certificates.DownloadRequest;
+import com.ftn.pki.dtos.certificates.DownloadResponseDTO;
 import com.ftn.pki.entities.certificates.Certificate;
 import com.ftn.pki.entities.certificates.CertificateType;
 import com.ftn.pki.entities.organizations.Organization;
@@ -16,14 +18,17 @@ import com.ftn.pki.repositories.certificates.CertificateRepository;
 import com.ftn.pki.repositories.organizations.OrganizationRepository;
 import com.ftn.pki.util.Utils;
 import jakarta.annotation.PostConstruct;
+import org.aspectj.weaver.ast.Not;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.crypto.SecretKey;
+import java.io.ByteArrayOutputStream;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
@@ -56,17 +61,14 @@ public class CertificateService {
         return new ArrayList<>();
     }
 
+    public Certificate getById(UUID uuid) throws NotFoundException {
+        return certificateRepository.getReferenceById(uuid);
+    }
 
-
+    @Transactional
     public CertificateResponse createCertificate(CertificateRequest dto) throws Exception{
         //todo
-        // kreiraj sertifikat
-            // kreiraj parove kljuceva za subjecta
-            // kreiraj subjecta
-            // kreiraj issuera
-            //generisi x509 sertifikat
-            //ekriptuj priv kljuc
-        //dodaj sve moguce provere
+        // zastita od korisnika!!!!!
 
         if (dto.getStartDate() == null || dto.getEndDate() == null){
             throw new IllegalAccessException("Start and end dates must be provided");
@@ -205,6 +207,44 @@ public class CertificateService {
 
     }
 
+    @Transactional
+    public DownloadResponseDTO download(DownloadRequest dto) throws Exception {
+        // find certificate for downloading
+        Certificate certificateEntity =  certificateRepository.findById(dto.getCertificateId()).orElseThrow(
+                () -> new NotFoundException("Certificate not found")
+        );
+
+        //todo dobavi usera i u zavisnosti od njega mogu da se downloaduju odredjeni sertifikati
+
+        // generate x509 certificate and decrypt private key
+        X509Certificate certificate = certificateEntity.getX509Certificate();
+        PrivateKey privateKey = loadAndDecryptPrivateKey(certificateEntity);
+
+        //keystore is file that stores key and certificate and keep them safe. usually secured with password like here
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");         //pkcs12 keystore format
+        keyStore.load(null, null);                      //empty keystore
+
+        keyStore.setKeyEntry(                                   //put private key and certificate in keystore
+                dto.getAlias(),                                 //name of key in keystore
+                privateKey,                                     //key secured by password
+                dto.getPassword().toCharArray(),                //password
+                new X509Certificate[]{certificate}
+        );
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        keyStore.store(baos, dto.getPassword().toCharArray());      // keystore password
+        byte[] p12Bytes = baos.toByteArray();
+
+        return DownloadResponseDTO.builder()
+                .certificateBytes(p12Bytes)
+                .fileName("certificate-" + certificateEntity.getSerialNumber() + ".p12")
+                .build();
+    }
+
+
+
+
+    // ================== helpers
 
     private SecretKey getOrganizationDEK(Organization organization) throws Exception {
         String encryptedDEKBase64 = organization.getEncKey();
@@ -230,4 +270,8 @@ public class CertificateService {
         return Utils.base64ToPrivateKey(decryptedPrivateKeyBase64);
 
     }
+
+
+
+
 }
