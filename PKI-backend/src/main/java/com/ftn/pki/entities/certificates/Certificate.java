@@ -1,5 +1,7 @@
 package com.ftn.pki.entities.certificates;
 
+import com.ftn.pki.crypto.Issuer;
+import com.ftn.pki.crypto.Subject;
 import com.ftn.pki.entities.organizations.Organization;
 import com.ftn.pki.entities.users.User;
 import jakarta.persistence.*;
@@ -17,32 +19,52 @@ import java.util.UUID;
 @NoArgsConstructor
 
 @Entity
-//@Table("certificates")
+@Table(name = "certificates")
 public class Certificate {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @ManyToOne
-    private CertificateAuthority issuerCa;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private CertificateType type;
 
-    private String subjectDn;
+    @Column(nullable = false)
+    private Date startDate;
+    @Column(nullable = false)
+    private Date endDate;
 
-    @Lob
-    private String certificatePem;
+    //certificate can be issued to user or organization
+    // which organization
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "organization_id", nullable = false)
+    private Organization organization;
 
+    //which user
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Column(nullable = false)
     private String serialNumber;
 
-    private Date validFrom;
-    private Date validTo;
+    //who issued certificate
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", nullable = true)
+    private Certificate parent;
 
-    @Enumerated(EnumType.STRING)
-    private CertificateType type; // ROOT, INTERMEDIATE, EE
+    @Column(nullable = false)
+    private boolean revoked = false;
 
-    private boolean revoked;
-    private Date revokedAt;
+    @Column(nullable = true)
     private String revocationReason;
 
+    @Lob    //large data annotation
+    private byte[] certificate; // X509Certificate
+
+    @Lob
+    private byte[] privateKeyEnc;
 
 
 }

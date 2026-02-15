@@ -1,4 +1,4 @@
-package com.ftn.pki.entities.certificates;
+package com.ftn.pki.crypto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
