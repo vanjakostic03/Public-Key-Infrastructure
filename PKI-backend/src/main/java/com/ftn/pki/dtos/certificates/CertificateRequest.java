@@ -28,5 +28,5 @@ public class CertificateRequest{
     private Map<String, String> extensions;
 
     private String assignToOrganizationName;
-    private String issuerCertificateId;         //who issued certificate - parent
+    private String parentId;        //who issued certificate - parent
 }

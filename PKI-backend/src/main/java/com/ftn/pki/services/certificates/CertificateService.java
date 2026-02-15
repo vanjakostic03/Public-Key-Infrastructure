@@ -4,20 +4,25 @@ import com.ftn.pki.crypto.Subject;
 import com.ftn.pki.dtos.certificates.CertificateRequest;
 import com.ftn.pki.dtos.certificates.CertificateResponse;
 import com.ftn.pki.entities.certificates.Certificate;
+import com.ftn.pki.entities.certificates.CertificateType;
+import com.ftn.pki.entities.organizations.Organization;
+import com.ftn.pki.exceptions.NotFoundException;
 import com.ftn.pki.repositories.certificates.CertificateRepository;
+import com.ftn.pki.repositories.organizations.OrganizationRepository;
 import com.ftn.pki.util.Utils;
+import jakarta.annotation.PostConstruct;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import javax.crypto.SecretKey;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 
 @Service
@@ -26,6 +31,20 @@ public class CertificateService {
     @Autowired
     CertificateRepository certificateRepository;
 
+    @Autowired
+    OrganizationRepository organizationRepository;
+
+    @Value("${master.key}")
+    private String masterKeyBase64;
+
+    private SecretKey masterKey;
+    private Utils utils;
+
+    @PostConstruct
+    public void init() {
+        this.masterKey = Utils.secretKeyFromBase64(masterKeyBase64);
+        this.utils = new Utils();
+    }
 
     public Collection<CertificateResponse> findAll() {
         List<Certificate> certificateResponses = certificateRepository.findAll();
@@ -35,6 +54,7 @@ public class CertificateService {
 
 
     public CertificateResponse createCertificate(CertificateRequest dto) throws Exception{
+        //todo
         // kreiraj sertifikat
             // kreiraj parove kljuceva za subjecta
             // kreiraj subjecta
@@ -43,10 +63,16 @@ public class CertificateService {
             //ekriptuj priv kljuc
         //dodaj sve moguce provere
 
+
+        // Create rsa key pair for Subject and x500name
+        // public key is for certificate so everyone can use it for encryption
+        // private key is a secret only for subject
         KeyPair keyPair = Utils.generateKeys();
         PublicKey publicKey = keyPair.getPublic();
         PrivateKey privateKey = keyPair.getPrivate();
 
+        // distinguished name - has all data that identifies organization/user
+        // entity identity
         X500Name x500Name =new X500NameBuilder()
                 .addRDN(BCStyle.CN, dto.getCommonName())
                 .addRDN(BCStyle.SURNAME, dto.getSurname())
@@ -57,22 +83,111 @@ public class CertificateService {
                 .addRDN(BCStyle.E, dto.getEmail())
                 .build();
 
+        // create subject
         Subject subject = new Subject(publicKey, x500Name);
 
+        // create issuer
         Issuer issuer;
-        Certificate parent =null;
+        Certificate parent =null;       // reference to parent certificate (entity)
+        //if certificate type is root CA then its self-signed
+        if( dto.getRequestedType() == CertificateType.ROOT_CA && dto.getParentId().isEmpty()){
+            issuer = new Issuer(privateKey, publicKey, x500Name);
+        }else{
+            // if not, find his parent, decrypt his private key so we can sign new certificate
+             parent = certificateRepository.findById(UUID.fromString(dto.getParentId()))
+                    .orElseThrow(() -> new NotFoundException("Certificate not found"));
 
+            // todo: validity of parent
+
+            X509Certificate parentCertificate = parent.getX509Certificate();
+            PrivateKey issuerPrivKeyDec = loadAndDecryptPrivateKey(parent);
+            issuer = new Issuer(issuerPrivKeyDec, parentCertificate.getPublicKey(), Utils.getSubjectX500Name(parentCertificate));
+        }
+
+
+
+        // create x509Cetificate
         X509Certificate x509Certificate = Utils.generateCertificate(
-            subject,
-            issuer,
+                subject,
+                issuer,
                 dto.getStartDate(),
                 dto.getEndDate(),
                 new BigInteger(64, new SecureRandom()).toString(),
-                dto.getRequestedType()
+                dto.getRequestedType(),
+                dto.getParentId(),
+                dto.getExtensions()
         );
-        //sacuvaj sertiifkat
-        //mapiraj i vrati response
 
+        // find organization and DEK = data encryption Key - used for encrypting private keys for certificates
+        // DEK - AES key
+        // master key decrypts DEK
+        Organization organization = organizationRepository.findByName(dto.getOrganization()).orElseThrow(() ->
+                new NotFoundException("Organization with that name not found"));
+
+        // encryption of private key
+        SecretKey organizationDEK = getOrganizationDEK(organization);
+        Utils.AESGcmEncrypted privateKeyEnc = utils.encrypt(organizationDEK, Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+
+        //map x509certificate on certificate entity
+        Certificate certificate = Certificate.builder()
+                .certificate(x509Certificate.getEncoded())
+                .parent(parent)
+                .organization(organization)
+                .revoked(false)
+                .type(dto.getRequestedType())
+                .user(null)         //za sada null, posle adminkoji je ulogovan
+                .serialNumber(x509Certificate.getSerialNumber().toString())
+                .privateKeyEnc(Base64.getDecoder().decode(privateKeyEnc.getCiphertext()))
+                .startDate(dto.getStartDate())
+                .endDate(dto.getEndDate())
+                .iv(privateKeyEnc.getIv())          // vector fo AES-GCM decryption
+                .build();
+
+
+        // save certificate entity
+        certificateRepository.save(certificate);
+
+        // map to certificate response
+        return CertificateResponse.builder()
+                .id(certificate.getId())
+                .type(certificate.getType())
+                .startDate(certificate.getStartDate())
+                .endDate(certificate.getEndDate())
+                .extensions(dto.getExtensions())
+                .commonName(dto.getCommonName())
+                .surname(dto.getSurname())
+                .givenName(dto.getGivenName())
+                .organization(dto.getOrganization())
+                .organizationalUnit(dto.getOrganizationalUnit())
+                .country(dto.getCountry())
+                .email(dto.getEmail())
+        .build();
+
+    }
+
+
+    private SecretKey getOrganizationDEK(Organization organization) throws Exception {
+        String encryptedDEKBase64 = organization.getEncKey();
+        Utils.AESGcmEncrypted encrypted = Utils.AESGcmEncrypted.builder()
+                .ciphertext(encryptedDEKBase64)
+                .iv(organization.getKeyIv())
+                .build();
+        String dekBase64 = utils.decrypt(masterKey, encrypted);
+        return Utils.secretKeyFromBase64(dekBase64);
+    }
+
+    private PrivateKey loadAndDecryptPrivateKey(Certificate certEntity) throws Exception {
+        byte[] encryptedPrivateKeyBytes = certEntity.getPrivateKeyEnc();
+        String iv = certEntity.getIv();
+
+        SecretKey organizationDEK = getOrganizationDEK(certEntity.getOrganization());
+        Utils.AESGcmEncrypted encryptedPrivateKey = Utils.AESGcmEncrypted.builder()
+                .ciphertext(Base64.getEncoder().encodeToString(encryptedPrivateKeyBytes))
+                .iv(iv)
+            .build();
+
+        String decryptedPrivateKeyBase64 = utils.decrypt(organizationDEK, encryptedPrivateKey);
+        return Utils.base64ToPrivateKey(decryptedPrivateKeyBase64);
 
     }
 }

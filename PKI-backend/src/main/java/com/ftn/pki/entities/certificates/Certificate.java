@@ -5,20 +5,18 @@ import com.ftn.pki.crypto.Subject;
 import com.ftn.pki.entities.organizations.Organization;
 import com.ftn.pki.entities.users.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
+import java.security.cert.X509Certificate;
 import java.util.Date;
 import java.util.UUID;
 
-@Getter
-@Setter
+@Data
 @AllArgsConstructor
 @NoArgsConstructor
 
 @Entity
+@Builder
 @Table(name = "certificates")
 public class Certificate {
 
@@ -66,5 +64,13 @@ public class Certificate {
     @Lob
     private byte[] privateKeyEnc;
 
+    @Column
+    private String iv;          // obezbedjuje da je chipertext uvek drugaciji
+
+    public X509Certificate getX509Certificate() throws Exception {
+        return (X509Certificate) java.security.cert.CertificateFactory
+                .getInstance("X.509")
+                .generateCertificate(new java.io.ByteArrayInputStream(this.certificate));
+    }
 
 }

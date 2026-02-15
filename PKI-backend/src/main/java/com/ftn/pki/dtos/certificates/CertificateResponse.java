@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Data
@@ -18,12 +19,14 @@ public class CertificateResponse {
     @Id
     private UUID id;
     private CertificateType type;
-    private String serialNumber;
     private Date startDate;
     private Date endDate;
-    private Organization organization;
-    private User user;
-    private Certificate issuer;
-    private boolean revoked = false;
-    private String revocationReason;
+    private Map<String, String> extensions;
+    private String commonName;
+    private String surname;
+    private String givenName;
+    private String organization;
+    private String organizationalUnit;
+    private String country;
+    private String email;
 }
