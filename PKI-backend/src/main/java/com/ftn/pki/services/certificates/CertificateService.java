@@ -7,6 +7,11 @@ import com.ftn.pki.entities.certificates.Certificate;
 import com.ftn.pki.entities.certificates.CertificateType;
 import com.ftn.pki.entities.organizations.Organization;
 import com.ftn.pki.exceptions.NotFoundException;
+import com.ftn.pki.exceptions.crypto.DecryptionException;
+import com.ftn.pki.exceptions.crypto.EncryptionException;
+import com.ftn.pki.exceptions.crypto.SerialNumberConflictException;
+import com.ftn.pki.exceptions.issuers.IssuerCannotIssueException;
+import com.ftn.pki.exceptions.issuers.IssuerCertificateNotActiveException;
 import com.ftn.pki.repositories.certificates.CertificateRepository;
 import com.ftn.pki.repositories.organizations.OrganizationRepository;
 import com.ftn.pki.util.Utils;
@@ -63,6 +68,17 @@ public class CertificateService {
             //ekriptuj priv kljuc
         //dodaj sve moguce provere
 
+        if (dto.getStartDate() == null || dto.getEndDate() == null){
+            throw new IllegalAccessException("Start and end dates must be provided");
+        }
+        if (dto.getStartDate().after( dto.getEndDate())){
+            throw new IllegalAccessException("Start date is after end date");
+        }
+        if (dto.getCommonName() == null || dto.getOrganization() == null || dto.getCountry() == null || dto.getEmail() == null) {
+            throw new IllegalAccessException("Common Name, Organization, Country, and Email are mandatory");
+        }
+
+
 
         // Create rsa key pair for Subject and x500name
         // public key is for certificate so everyone can use it for encryption
@@ -97,10 +113,24 @@ public class CertificateService {
              parent = certificateRepository.findById(UUID.fromString(dto.getParentId()))
                     .orElseThrow(() -> new NotFoundException("Certificate not found"));
 
-            // todo: validity of parent
 
             X509Certificate parentCertificate = parent.getX509Certificate();
-            PrivateKey issuerPrivKeyDec = loadAndDecryptPrivateKey(parent);
+
+            Date now = new Date();
+            if(now.before(parentCertificate.getNotBefore()) || now.after(parentCertificate.getNotAfter())) {
+                throw new IssuerCertificateNotActiveException("Parent certificate is not active");
+            }
+
+            if(parent.getType() == CertificateType.END_ENTITY) {
+                throw new IssuerCannotIssueException("End Entity certificate cannot issue new certificates");
+            }
+
+            PrivateKey issuerPrivKeyDec;
+            try {
+                issuerPrivKeyDec = loadAndDecryptPrivateKey(parent);
+            } catch(Exception e) {
+                throw new DecryptionException("Cannot decrypt parent's private key");
+            }
             issuer = new Issuer(issuerPrivKeyDec, parentCertificate.getPublicKey(), Utils.getSubjectX500Name(parentCertificate));
         }
 
@@ -124,9 +154,19 @@ public class CertificateService {
         Organization organization = organizationRepository.findByName(dto.getOrganization()).orElseThrow(() ->
                 new NotFoundException("Organization with that name not found"));
 
-        // encryption of private key
         SecretKey organizationDEK = getOrganizationDEK(organization);
-        Utils.AESGcmEncrypted privateKeyEnc = utils.encrypt(organizationDEK, Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+
+        // encryption of private key
+        Utils.AESGcmEncrypted privateKeyEnc;
+        try {
+            privateKeyEnc = utils.encrypt(organizationDEK, Base64.getEncoder().encodeToString(privateKey.getEncoded()));
+        } catch(Exception e) {
+            throw new EncryptionException("Cannot encrypt private key");
+        }
+
+        if(certificateRepository.existsBySerialNumber(x509Certificate.getSerialNumber().toString())) {
+            throw new SerialNumberConflictException("Serial number conflict detected");
+        }
 
         //map x509certificate on certificate entity
         Certificate certificate = Certificate.builder()

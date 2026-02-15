@@ -45,7 +45,7 @@ public class Certificate {
     private User user;
 
     @Column(nullable = false)
-    private String serialNumber;
+    private String serialNumber;                // identify certificate - for crl
 
     //who issued certificate
     @ManyToOne(fetch = FetchType.LAZY)
