@@ -1,1 +1,115 @@
-<p>admin-home-dashboard works!</p>
+<div class="dashboard">
+
+  <div class="header">
+    <h2>All Certificates</h2>
+    <button class="primary-btn" (click)="openCreateModal()">
+      + Issue Certificate
+    </button>
+  </div>
+
+  <table>
+    <thead>
+    <tr>
+      <th>CN</th>
+      <th>Type</th>
+      <th>Organization</th>
+      <th>Valid From</th>
+      <th>Valid To</th>
+      <th>Actions</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr *ngFor="let cert of certificates">
+      <td>{{ cert.commonName }}</td>
+      <td>{{ cert.type }}</td>
+      <td>{{ cert.organization }}</td>
+      <td>{{ cert.startDate | date }}</td>
+      <td>{{ cert.endDate | date }}</td>
+      <td>
+        <button (click)="showDetails(cert)">Details</button>
+        <button (click)="downloadCertificate(cert.id)">Download</button>
+      </td>
+    </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- DETAILS MODAL -->
+<div class="modal" *ngIf="selectedCertificate">
+  <div class="modal-content">
+    <h3>Certificate Details</h3>
+
+    <p><b>Common Name:</b> {{ selectedCertificate.commonName }}</p>
+    <p><b>Given Name:</b> {{ selectedCertificate.givenName }}</p>
+    <p><b>Surname:</b> {{ selectedCertificate.surname }}</p>
+    <p><b>Organization:</b> {{ selectedCertificate.organization }}</p>
+    <p><b>Org Unit:</b> {{ selectedCertificate.organizationalUnit }}</p>
+    <p><b>Country:</b> {{ selectedCertificate.country }}</p>
+    <p><b>Email:</b> {{ selectedCertificate.email }}</p>
+
+    <h4>Extensions</h4>
+    <div *ngFor="let ext of selectedCertificate.extensions | keyvalue">
+      <p><b>{{ ext.key }}</b>: {{ ext.value }}</p>
+    </div>
+
+    <button (click)="closeDetails()">Close</button>
+  </div>
+</div>
+
+<!-- CREATE CERTIFICATE MODAL -->
+<div class="modal" *ngIf="showCreateModal">
+  <div class="modal-content large">
+
+    <h3>Issue Certificate</h3>
+
+    <<!-- Certificate Type -->
+    <select [(ngModel)]="createForm.requestedType">
+      <option value="ROOT_CA">Root CA</option>
+      <option value="INTERMEDIATE">Intermediate CA</option>
+      <option value="END_ENTITY">End Entity</option>
+    </select>
+
+    <!-- Issuer -->
+    <select *ngIf="createForm.requestedType !== 'ROOT_CA'" [(ngModel)]="createForm.parentId">
+      <option *ngFor="let cert of issuerCertificates" [value]="cert.id">
+        {{ cert.commonName }}
+      </option>
+    </select>
+
+
+    <hr>
+
+    <h4>Subject</h4>
+    <input placeholder="Common Name" [(ngModel)]="createForm.commonName">
+    <input placeholder="Surname" [(ngModel)]="createForm.surname">
+    <input placeholder="Given Name" [(ngModel)]="createForm.givenName">
+    <input placeholder="Organization" [(ngModel)]="createForm.organization">
+    <input placeholder="Organizational Unit" [(ngModel)]="createForm.organizationalUnit">
+    <input placeholder="Country" [(ngModel)]="createForm.country">
+    <input placeholder="Email" [(ngModel)]="createForm.email">
+
+    <hr>
+    <h4>Validity</h4>
+    <label>Start Date</label>
+    <input type="date" [(ngModel)]="createForm.startDate">
+    <label>End Date</label>
+    <input type="date" [(ngModel)]="createForm.endDate">
+
+    <hr>
+    <h4>Extensions</h4>
+    <label>
+      <input type="checkbox" [(ngModel)]="createForm.basicConstraints"> CA
+    </label>
+    <label>
+      <input type="checkbox" [(ngModel)]="createForm.keyCertSign"> keyCertSign
+    </label>
+    <label>
+      <input type="checkbox" [(ngModel)]="createForm.digitalSignature"> digitalSignature
+    </label>
+
+    <div class="actions">
+      <button (click)="createCertificate()">Create</button>
+      <button (click)="closeCreateModal()">Cancel</button>
+    </div>
+  </div>
+</div>
