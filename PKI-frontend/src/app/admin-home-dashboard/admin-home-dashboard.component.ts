@@ -1,5 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import {CertificateRequest, CertificateResponse, CertificateService} from '../certificate/certificate.service';
+import {
+  CertificateRequest,
+  CertificateResponse,
+  CertificateService,
+  DownloadRequest
+} from '../certificate/certificate.service';
 import { HttpClient } from '@angular/common/http';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -17,6 +22,7 @@ export class AdminHomeDashboardComponent implements OnInit {
   selectedCertificate: CertificateResponse | null = null;
 
   showCreateModal = false;
+  showDownloadModal = false;
 
   createForm: any = {
     requestedType: '',
@@ -33,8 +39,15 @@ export class AdminHomeDashboardComponent implements OnInit {
     extensions: {}
   };
 
+  selectedDownloadId: string | null = null;
 
-  constructor(private http: HttpClient, private certificateService: CertificateService) {}
+  downloadForm = {
+    alias: '',
+    password: ''
+  };
+
+  constructor(private http: HttpClient, private certificateService: CertificateService) {
+  }
 
   ngOnInit(): void {
     this.loadCertificates();
@@ -50,19 +63,6 @@ export class AdminHomeDashboardComponent implements OnInit {
       }
     });
   }
-
-  downloadCertificate(id: string) {
-    this.http.get(`/api/admin/certificates/${id}/download`, {
-      responseType: 'blob'
-    }).subscribe(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'certificate.p12';
-      a.click();
-    });
-  }
-
 
   createCertificate(){
     const dto: CertificateRequest = {
@@ -114,6 +114,45 @@ export class AdminHomeDashboardComponent implements OnInit {
 
   get issuerCertificates() {
     return this.certificates.filter(c => c.type !== 'END_ENTITY');
+  }
+
+
+  openDownloadModal(id: string) {
+    this.selectedDownloadId = id;
+    this.showDownloadModal = true;
+  }
+
+  closeDownloadModal() {
+    this.showDownloadModal = false;
+    this.selectedDownloadId = null;
+    this.downloadForm.alias = '';
+    this.downloadForm.password = '';
+  }
+
+  confirmDownload() {
+
+    if (!this.selectedDownloadId) return;
+
+    const dto: DownloadRequest = {
+      certificateId: this.selectedDownloadId,
+      alias: this.downloadForm.alias,
+      password: this.downloadForm.password
+    };
+
+    this.certificateService.downloadCertificate(dto).subscribe({
+      next: (blob: Blob) => {
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `certificate-${this.selectedDownloadId}.p12`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+
+        this.closeDownloadModal();
+      },
+      error: err => console.error(err)
+    });
   }
 
 

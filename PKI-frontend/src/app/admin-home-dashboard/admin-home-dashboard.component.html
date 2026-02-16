@@ -27,7 +27,7 @@
       <td>{{ cert.endDate | date }}</td>
       <td>
         <button (click)="showDetails(cert)">Details</button>
-        <button (click)="downloadCertificate(cert.id)">Download</button>
+        <button (click)="openDownloadModal(cert.id)">Download</button>
       </td>
     </tr>
     </tbody>
@@ -111,5 +111,32 @@
       <button (click)="createCertificate()">Create</button>
       <button (click)="closeCreateModal()">Cancel</button>
     </div>
+  </div>
+</div>
+
+
+<!-- DOWNLOAD MODAL -->
+<div class="modal" *ngIf="showDownloadModal">
+  <div class="modal-content">
+
+    <h3>Download Certificate</h3>
+
+    <input
+      type="text"
+      placeholder="Alias"
+      [(ngModel)]="downloadForm.alias"
+    />
+
+    <input
+      type="password"
+      placeholder="Password"
+      [(ngModel)]="downloadForm.password"
+    />
+
+    <div class="actions">
+      <button (click)="confirmDownload()">Download</button>
+      <button (click)="closeDownloadModal()">Cancel</button>
+    </div>
+
   </div>
 </div>

@@ -43,6 +43,17 @@ export interface CertificateRequest {
   parentId: string | null;
 }
 
+export interface DownloadRequest {
+  certificateId: string;
+  password: string;
+  alias: string;
+}
+
+export interface DownloadResponseDTO {
+  fileName: string;
+  certificateBytes:  Uint8Array;
+}
+
 
 
 @Injectable({
@@ -70,6 +81,19 @@ export class CertificateService {
         headers: {
           Authorization: `Bearer ${this.authService.getAccessToken()}`
         }
+      }
+    );
+  }
+
+  downloadCertificate(request: DownloadRequest) : Observable<Blob>{
+    return this.http.post(
+      this.baseUrl + '/download',
+      request,
+      {
+        headers: {
+          Authorization: `Bearer ${this.authService.getAccessToken()}`
+        },
+        responseType: 'blob'
       }
     );
   }
