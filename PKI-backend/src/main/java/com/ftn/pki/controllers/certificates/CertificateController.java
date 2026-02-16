@@ -38,8 +38,10 @@ public class CertificateController {
             System.out.println("upaoo");
             response = certificateService.createCertificate(dto);
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .build();
+
         }
         return ResponseEntity.ok(response);
     }

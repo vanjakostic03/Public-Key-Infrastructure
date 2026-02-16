@@ -109,6 +109,7 @@ public class CertificateService {
         }
 
 
+
         // Create rsa key pair for Subject and x500name
         // public key is for certificate so everyone can use it for encryption
         // private key is a secret only for subject
@@ -132,17 +133,20 @@ public class CertificateService {
         // create subject
         Subject subject = new Subject(publicKey, x500Name);
 
+
         // create issuer
         Issuer issuer;
         Certificate parent =null;       // reference to parent certificate (entity)
+
         //if certificate type is root CA then its self-signed
         if( dto.getRequestedType() == CertificateType.ROOT_CA && (dto.getParentId() == null || dto.getParentId().isEmpty())){
+
             issuer = new Issuer(privateKey, publicKey, x500Name);
         }else{
             // if not, find his parent, decrypt his private key so we can sign new certificate
+
              parent = certificateRepository.findById(UUID.fromString(dto.getParentId()))
                     .orElseThrow(() -> new NotFoundException("Certificate not found"));
-
 
             X509Certificate parentCertificate = parent.getX509Certificate();
 
@@ -165,6 +169,7 @@ public class CertificateService {
         }
 
 
+
         // create x509Cetificate
         X509Certificate x509Certificate = Utils.generateCertificate(
                 subject,
@@ -180,10 +185,8 @@ public class CertificateService {
         // find organization and DEK = data encryption Key - used for encrypting private keys for certificates
         // DEK - AES key
         // master key decrypts DEK
-
         Organization organization = organizationRepository.findByName(dto.getAssignToOrganizationName()).orElseThrow(() ->
                 new NotFoundException("Organization with that name not found"));
-
 
         SecretKey organizationDEK = getOrganizationDEK(organization);
 
@@ -237,35 +240,31 @@ public class CertificateService {
 
     @Transactional
     public DownloadResponseDTO download(DownloadRequest dto) throws Exception {
-
-        // Find certificate
-        Certificate certificateEntity = certificateRepository.findById(dto.getCertificateId())
-                .orElseThrow(() -> new NotFoundException("Certificate not found"));
-
-
-        // Generate X509 certificate and decrypt private key
-        X509Certificate certificate = certificateEntity.getX509Certificate();
-
-        PrivateKey privateKey = loadAndDecryptPrivateKey(certificateEntity);
-
-        // Create PKCS12 keystore
-        KeyStore keyStore = KeyStore.getInstance("PKCS12");
-        keyStore.load(null, null); // Initialize empty keystore
-
-        // Add private key and certificate chain
-        X509Certificate[] chain = new X509Certificate[]{certificate};
-        keyStore.setKeyEntry(
-                dto.getAlias(),
-                privateKey,
-                dto.getPassword().toCharArray(),
-                chain
+        // find certificate for downloading
+        Certificate certificateEntity =  certificateRepository.findById(dto.getCertificateId()).orElseThrow(
+                () -> new NotFoundException("Certificate not found")
         );
 
-        // Save to byte array
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        keyStore.store(baos, dto.getPassword().toCharArray());
-        byte[] p12Bytes = baos.toByteArray();
+        //todo dobavi usera i u zavisnosti od njega mogu da se downloaduju odredjeni sertifikati
 
+        // generate x509 certificate and decrypt private key
+        X509Certificate certificate = certificateEntity.getX509Certificate();
+        PrivateKey privateKey = loadAndDecryptPrivateKey(certificateEntity);
+
+        //keystore is file that stores key and certificate and keep them safe. usually secured with password like here
+        KeyStore keyStore = KeyStore.getInstance("PKCS12");         //pkcs12 keystore format
+        keyStore.load(null, null);                      //empty keystore
+
+        keyStore.setKeyEntry(                                   //put private key and certificate in keystore
+                dto.getAlias(),                                 //name of key in keystore
+                privateKey,                                     //key secured by password
+                dto.getPassword().toCharArray(),                //password
+                new X509Certificate[]{certificate}
+        );
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        keyStore.store(baos, dto.getPassword().toCharArray());      // keystore password
+        byte[] p12Bytes = baos.toByteArray();
 
         return DownloadResponseDTO.builder()
                 .certificateBytes(p12Bytes)
@@ -275,15 +274,19 @@ public class CertificateService {
 
 
 
+
     // ================== helpers
 
     private SecretKey getOrganizationDEK(Organization organization) throws Exception {
         String encryptedDEKBase64 = organization.getEncKey();
+
         Utils.AESGcmEncrypted encrypted = Utils.AESGcmEncrypted.builder()
                 .ciphertext(encryptedDEKBase64)
                 .iv(organization.getKeyIv())
                 .build();
+
         String dekBase64 = utils.decrypt(masterKey, encrypted);
+
         return Utils.secretKeyFromBase64(dekBase64);
     }
 
