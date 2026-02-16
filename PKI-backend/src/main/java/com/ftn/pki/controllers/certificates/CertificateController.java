@@ -44,8 +44,8 @@ public class CertificateController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/download")
-    public ResponseEntity<DownloadResponseDTO> downloadCertificate(@RequestBody DownloadRequest dto) {
+    @PostMapping("/download")
+    public ResponseEntity<byte[]> downloadCertificate(@RequestBody DownloadRequest dto) {
         try {
             DownloadResponseDTO response = certificateService.download(dto);
 
@@ -53,11 +53,11 @@ public class CertificateController {
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "attachment; filename=\"" + response.getFileName() + "\"")
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(response);
+                    .body(response.getCertificateBytes());
 
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .build();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
+
 }
