@@ -1,7 +1,10 @@
 package com.ftn.pki.configuration;
 
 import com.ftn.pki.security.RestAuthenticationEntryPoint;
+import jakarta.annotation.PostConstruct;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -17,6 +20,9 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+import java.security.Security;
 import java.util.*;
 
 
@@ -29,6 +35,36 @@ public class SecurityConfig {
     private RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
 
+    @PostConstruct
+    public void init() {
+        Security.addProvider(new BouncyCastleProvider());
+    }
+
+    @Bean
+    public SecretKey masterKey() {
+        String keyBase64 = System.getenv("PKI_MASTER_KEY");
+
+        if (keyBase64 == null || keyBase64.isEmpty()) {
+            throw new IllegalStateException(
+                    "PKI_MASTER_KEY environment variable is not set!\n" +
+                            "Set it in IntelliJ: Run → Edit Configurations → Environment Variables"
+            );
+        }
+
+        try {
+            byte[] keyBytes = Base64.getDecoder().decode(keyBase64);
+
+            if (keyBytes.length != 32) {
+                throw new IllegalStateException(
+                        "Master key must be 256 bits (32 bytes), got " + keyBytes.length
+                );
+            }
+            return new SecretKeySpec(keyBytes, "AES");
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalStateException("Invalid Base64 format for PKI_MASTER_KEY", e);
+        }
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,9 +95,7 @@ public class SecurityConfig {
         converter.setJwtGrantedAuthoritiesConverter(jwt -> {
             Collection<GrantedAuthority> authorities = new ArrayList<>();
 
-            Map<String, Object> realmAccess =
-                    jwt.getClaim("realm_access");
-
+            Map<String, Object> realmAccess = jwt.getClaim("realm_access");
             if (realmAccess != null && realmAccess.containsKey("roles")) {
                 List<String> roles = (List<String>) realmAccess.get("roles");
                 roles.forEach(role ->
@@ -69,6 +103,18 @@ public class SecurityConfig {
                 );
             }
 
+            Map<String, Object> resourceAccess = jwt.getClaim("resource_access");
+            if (resourceAccess != null) {
+                Map<String, Object> pkiBackend = (Map<String, Object>) resourceAccess.get("pki-backend");
+                if (pkiBackend != null && pkiBackend.containsKey("roles")) {
+                    List<String> clientRoles = (List<String>) pkiBackend.get("roles");
+                    clientRoles.forEach(role ->
+                            authorities.add(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+                }
+            }
+
+//            System.out.println("Extracted authorities: " + authorities);
             return authorities;
         });
 
@@ -79,7 +125,7 @@ public class SecurityConfig {
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOriginPatterns(List.of("http://localhost:4200"));
-        configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH")); // or simply "*"
+        configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
