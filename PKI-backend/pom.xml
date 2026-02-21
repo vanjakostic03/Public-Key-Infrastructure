@@ -119,6 +119,13 @@
 			<version>1.78</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.keycloak</groupId>
+			<artifactId>keycloak-spring-boot-starter</artifactId>
+			<version>22.0.1</version>
+		</dependency>
+
+
 	</dependencies>
 
 	<build>

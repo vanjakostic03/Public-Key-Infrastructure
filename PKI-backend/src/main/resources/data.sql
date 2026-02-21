@@ -3,7 +3,8 @@ INSERT INTO users (id, name, surname, email, password, user_type)
 VALUES
     ('a1b2c3d4-e5f6-7890-abcd-ef1234567890'::uuid, 'John', 'Doe', 'admin@pki.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye1J8f0JFO.6KjB8R5N1.1hNQ9jI3LQXK', 'ADMIN'),
     ('b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'Jane', 'Smith', 'ca@pki.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye1J8f0JFO.6KjB8R5N1.1hNQ9jI3LQXK', 'CA'),
-    ('c3d4e5a6-b7c8-9012-cdef-123456789012'::uuid, 'Bob', 'Wilson', 'user@pki.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye1J8f0JFO.6KjB8R5N1.1hNQ9jI3LQXK', 'REGULAR');
+    ('c3d4e5a6-b7c8-9012-cdef-123456789012'::uuid, 'Bob', 'Wilson', 'user@pki.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye1J8f0JFO.6KjB8R5N1.1hNQ9jI3LQXK', 'REGULAR'),
+    ('d4e5a6b7-c8d9-ef01-2345-678901234567'::uuid, 'Vanja', 'Kostić', 'vanjakostic03@gmail.com', '$2a$10$N9qo8uLOickgx2ZMRZoMye1J8f0JFO.6KjB8R5N1.1hNQ9jI3LQXK', 'ADMIN');
 
 -- Insert test organizations
 INSERT INTO organizations (id, name, description, ca_user_id, enc_key, key_iv)

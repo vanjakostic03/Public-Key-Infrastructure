@@ -23,13 +23,18 @@ public class CertificateController {
     @Autowired
     private CertificateService certificateService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CA','REGULAR')")
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Collection<CertificateResponse>> getCertificates() {
-        return ResponseEntity.ok(certificateService.findAll());
+        try {
+            return ResponseEntity.ok(certificateService.findAll());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .build();
+        }
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN','CA')")
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CertificateResponse> createCertificate(@RequestBody CertificateRequest dto){
 
@@ -47,6 +52,7 @@ public class CertificateController {
     }
 
     @PostMapping("/download")
+    @PreAuthorize("hasAnyRole('ADMIN','CA','REGULAR')")
     public ResponseEntity<byte[]> downloadCertificate(@RequestBody DownloadRequest dto) {
         try {
             DownloadResponseDTO response = certificateService.download(dto);

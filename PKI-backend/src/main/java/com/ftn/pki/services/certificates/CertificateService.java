@@ -8,6 +8,8 @@ import com.ftn.pki.dtos.certificates.DownloadResponseDTO;
 import com.ftn.pki.entities.certificates.Certificate;
 import com.ftn.pki.entities.certificates.CertificateType;
 import com.ftn.pki.entities.organizations.Organization;
+import com.ftn.pki.entities.users.User;
+import com.ftn.pki.exceptions.AccessDeniedException;
 import com.ftn.pki.exceptions.NotFoundException;
 import com.ftn.pki.exceptions.crypto.DecryptionException;
 import com.ftn.pki.exceptions.crypto.EncryptionException;
@@ -16,6 +18,7 @@ import com.ftn.pki.exceptions.issuers.IssuerCannotIssueException;
 import com.ftn.pki.exceptions.issuers.IssuerCertificateNotActiveException;
 import com.ftn.pki.repositories.certificates.CertificateRepository;
 import com.ftn.pki.repositories.organizations.OrganizationRepository;
+import com.ftn.pki.repositories.users.UserRepository;
 import com.ftn.pki.util.Utils;
 import jakarta.annotation.PostConstruct;
 import org.aspectj.weaver.ast.Not;
@@ -23,7 +26,9 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,7 +39,8 @@ import java.security.*;
 import java.security.cert.X509Certificate;
 import java.util.*;
 import java.util.stream.Collectors;
-
+import org.keycloak.representations.AccessToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 public class CertificateService {
@@ -45,6 +51,8 @@ public class CertificateService {
     @Autowired
     OrganizationRepository organizationRepository;
 
+    @Autowired
+    UserRepository userRepository;
 
     @Autowired
     private SecretKey masterKey;  // Inject bean iz SecurityConfig
@@ -56,14 +64,26 @@ public class CertificateService {
         this.utils = new Utils();
     }
 
-    public Collection<CertificateResponse> findAll() {
-        List<Certificate> certificates = certificateRepository.findAll();
+    public Collection<CertificateResponse> findAll() throws Exception{
 
-        // Mapiraj Certificate entitete u CertificateResponse DTO-ove
+        Authentication auth = Utils.getAuthentication();
+
+        if (auth == null) {
+            throw new IllegalAccessException("No authenticated user");
+        }
+
+        List<Certificate> certificates = new ArrayList<>();
+        if (Utils.hasRole("ADMIN")){
+            certificates = certificateRepository.findAll();
+        }
+
+        else{
+            //todo za CA/REGULAR usera
+        }
+
         return certificates.stream()
                 .map(cert -> {
                     try {
-                        // Učitaj X509 sertifikat da izvučeš podatke
                         X509Certificate x509 = cert.getX509Certificate();
                         X500Name x500Name = Utils.getSubjectX500Name(x509);
 
@@ -72,7 +92,6 @@ public class CertificateService {
                                 .type(cert.getType())
                                 .startDate(cert.getStartDate())
                                 .endDate(cert.getEndDate())
-                                // Izvuci podatke iz X500Name
                                 .commonName(Utils.getRDNValue(x500Name, BCStyle.CN))
                                 .surname(Utils.getRDNValue(x500Name, BCStyle.SURNAME))
                                 .givenName(Utils.getRDNValue(x500Name, BCStyle.GIVENNAME))
@@ -87,6 +106,7 @@ public class CertificateService {
                     }
                 })
                 .collect(Collectors.toList());
+
     }
 
     public Certificate getById(UUID uuid) throws NotFoundException {
@@ -95,8 +115,21 @@ public class CertificateService {
 
     @Transactional
     public CertificateResponse createCertificate(CertificateRequest dto) throws Exception{
-        //todo
-        // zastita od korisnika!!!!!
+
+        Authentication auth = Utils.getAuthentication();
+
+        if (auth == null) {
+            throw new IllegalAccessException("No authenticated user");
+        }
+
+        if (Utils.hasRole("REGULAR")){
+                throw new AccessDeniedException("Regular user cannot create certificate! ");
+        }else if(Utils.hasRole("CA")) {
+//            if (!dto.getAssignToOrganizationName().equals(getUserOrganization(auth))) {
+//                throw new IllegalAccessException("CA can only create certificates for their own organization");
+//            }
+        }
+
 
         if (dto.getStartDate() == null || dto.getEndDate() == null){
             throw new IllegalAccessException("Start and end dates must be provided");
@@ -209,7 +242,7 @@ public class CertificateService {
                 .organization(organization)
                 .revoked(false)
                 .type(dto.getRequestedType())
-                .user(null)         //za sada null, posle adminkoji je ulogovan
+                .user(getCurrentUser())         //za sada null, posle adminkoji je ulogovan
                 .serialNumber(x509Certificate.getSerialNumber().toString())
                 .privateKeyEnc(Base64.getDecoder().decode(privateKeyEnc.getCiphertext()))
                 .startDate(dto.getStartDate())
@@ -304,6 +337,42 @@ public class CertificateService {
         return Utils.base64ToPrivateKey(decryptedPrivateKeyBase64);
 
     }
+
+
+    private User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null) {
+            throw new IllegalStateException("No authentication");
+        }
+
+        System.out.println("Auth class: " + authentication.getClass().getName());
+        System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
+
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
+            System.out.println("JWT Claims:");
+            jwt.getClaims().forEach((key, value) ->
+                    System.out.println("  " + key + ": " + value)
+            );
+
+            String email = jwt.getClaim("email");
+            System.out.println("Email: " + email);
+
+            if (email != null) {
+                return userRepository.findByEmail(email)
+                        .orElseThrow(() -> new NotFoundException("User not found: " + email));
+            }
+        }
+
+        throw new IllegalStateException("Could not extract user from authentication");
+    }
+
+
+
+
+//    private String getUserOrganization(Authentication user){
+//
+//    }
 
 
 

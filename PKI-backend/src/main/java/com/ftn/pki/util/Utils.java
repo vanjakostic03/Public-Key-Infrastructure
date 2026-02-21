@@ -18,6 +18,9 @@ import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.Cipher;
@@ -158,5 +161,25 @@ public class Utils {
     public static class AESGcmEncrypted {
         private String ciphertext;
         private String iv;
+    }
+
+
+    // ================= user
+
+    public static Authentication getAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    public static String getUsername() {
+        Authentication auth = getAuthentication();
+        return auth != null ? auth.getName() : null;
+    }
+
+    public static boolean hasRole(String role) {
+        Authentication auth = getAuthentication();
+        if (auth == null || auth.getAuthorities() == null) return false;
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .anyMatch(r -> r.equals("ROLE_" + role));
     }
 }
