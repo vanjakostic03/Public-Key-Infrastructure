@@ -11,6 +11,6 @@ INSERT INTO organizations (id, name, description, ca_user_id, enc_key, key_iv)
 VALUES
     ('d4e5a6b7-c8d9-0123-defa-234567890123'::uuid, 'dfgh', 'Test Organization DFGH', 'b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'oOXKTJ9QUHafPsaN21PU1tWBuilZE52ms1IkHOhxOeiU4ZP6Ps70wNfyHpFh8Me9zdzWqOeODU5jrIim', 'K1OFdrlFYsP28Quc'),
     ('e5a6b7c8-d9e0-1234-eabc-345678901234'::uuid, 'Acme Corp', 'Acme Corporation', 'b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'YWNtZUVuY3J5cHRpb25LZXkxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTA=', 'YWNtZUl2MTIzNDU2Nzg5MA=='),
-    ('a6b7c8d9-e0a1-2345-abcd-456789012345'::uuid, 'TechStart', 'Technology Startup Inc', 'b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'dGVjaFN0YXJ0S2V5MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIz', 'dGVjaFN0YXJ0SXYxMjM0NQ==');
-
+    ('a6b7c8d9-e0a1-2345-abcd-456789012345'::uuid, 'TechStart', 'Technology Startup Inc', 'b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'dGVjaFN0YXJ0S2V5MTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIz', 'dGVjaFN0YXJ0SXYxMjM0NQ=='),
+    ('f7a8d9e0-a1b2-3456-bcde-567890123456'::uuid, 'FTN Novi Sad', 'Fakultet Tehnickih Nauka', 'b2c3d4e5-a6b7-8901-bcde-a12345678901'::uuid, 'D/NiQcW31MeEYSYBGGp6Ft9mJ5FO8YbKcaXhTAwxNOx+ZmOY+Ail7afCMhQrxfsoYfaAhONK2VmcWPS2', 'Zn+jB/8Xs8o+2k99');
 

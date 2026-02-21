@@ -139,11 +139,9 @@ public class Utils {
     public String decrypt(SecretKey key, AESGcmEncrypted encrypted) throws Exception {
         byte[] iv = Base64.getDecoder().decode(encrypted.getIv());
         byte[] ciphertext = Base64.getDecoder().decode(encrypted.getCiphertext());
-        System.out.println("prosao prvi");
         Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
         GCMParameterSpec spec = new GCMParameterSpec(128, iv);
         cipher.init(Cipher.DECRYPT_MODE, key, spec);
-        System.out.println("prosao drugi ");
         byte[] plaintext = cipher.doFinal(ciphertext);
         return new String(plaintext);
     }

@@ -346,17 +346,17 @@ public class CertificateService {
             throw new IllegalStateException("No authentication");
         }
 
-        System.out.println("Auth class: " + authentication.getClass().getName());
-        System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
+//        System.out.println("Auth class: " + authentication.getClass().getName());
+//        System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
 
         if (authentication.getPrincipal() instanceof Jwt jwt) {
-            System.out.println("JWT Claims:");
-            jwt.getClaims().forEach((key, value) ->
-                    System.out.println("  " + key + ": " + value)
-            );
+//            System.out.println("JWT Claims:");
+//            jwt.getClaims().forEach((key, value) ->
+//                    System.out.println("  " + key + ": " + value)
+//            );
 
             String email = jwt.getClaim("email");
-            System.out.println("Email: " + email);
+//            System.out.println("Email: " + email);
 
             if (email != null) {
                 return userRepository.findByEmail(email)

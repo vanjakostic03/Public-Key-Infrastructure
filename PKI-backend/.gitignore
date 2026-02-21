@@ -31,3 +31,7 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Env i sertifikati
+.env
+/resources/localhost.p12
