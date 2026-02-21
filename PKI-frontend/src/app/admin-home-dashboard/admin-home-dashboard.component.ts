@@ -109,7 +109,21 @@ export class AdminHomeDashboardComponent implements OnInit {
 
   closeCreateModal() {
     this.showCreateModal = false;
-    this.showCreateModal = false;
+
+    this.createForm = {
+      requestedType: '',
+      parentId: null,
+      commonName: '',
+      surname: '',
+      givenName: '',
+      organization: '',
+      organizationalUnit: '',
+      country: '',
+      email: '',
+      startDate: '',
+      endDate: '',
+      extensions: {}
+    };
   }
 
   get issuerCertificates() {
