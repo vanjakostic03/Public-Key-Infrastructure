@@ -57,6 +57,11 @@
         },
         "serve": {
           "builder": "@angular-devkit/build-angular:dev-server",
+          "options": {
+            "ssl": true,
+            "sslKey": "src/assets/alias.privkey.pem",
+            "sslCert": "src/assets/localhost_PKI_Root_CA_.cer"
+          },
           "configurations": {
             "production": {
               "buildTarget": "PKI-frontend:build:production"

@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private clientId = 'pki-backend';
-  private redirectUri = 'http://localhost:4200';
+  private redirectUri = 'https://localhost:4200';
   private keycloakUrl = 'http://localhost:8080/realms/pki/protocol/openid-connect';
 
   constructor(private http: HttpClient) {}

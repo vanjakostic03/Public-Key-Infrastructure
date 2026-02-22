@@ -40,3 +40,8 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+src/assets/*.p12
+src/assets/*.pem
+src/assets/*.cer
+src/assets/*.key

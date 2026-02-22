@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import {HttpClient} from '@angular/common/http';
-import {UserService} from '../authentication/user.service';
 import {Observable} from 'rxjs';
 import {AuthService} from '../authentication/auth.service';
 
@@ -61,7 +60,7 @@ export interface DownloadResponseDTO {
 })
 export class CertificateService {
 
-  private baseUrl = 'http://localhost:8081/api/certificates';
+  private baseUrl = 'https://localhost:8443/api/certificates';
 
   constructor(private http: HttpClient, private authService: AuthService) {}
 
