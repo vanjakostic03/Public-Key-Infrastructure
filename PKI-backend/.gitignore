@@ -34,4 +34,4 @@ build/
 
 # Env i sertifikati
 .env
-/resources/localhost.p12
+/src/main/resources/localhost.p12
