@@ -15,7 +15,6 @@ export class AuthGuard implements CanActivate {
       this.authService.login();
       return false;
     }
-
     const expectedRole = route.data['role'];
 
     if (expectedRole && !this.authService.hasRole(expectedRole)) {

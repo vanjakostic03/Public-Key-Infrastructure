@@ -120,9 +120,12 @@ export class AuthService {
       const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
       const payload = JSON.parse(window.atob(base64));
 
-      return payload.realm_access?.roles || [];
+      const realmRoles = payload.realm_access?.roles || [];
+
+      const clientRoles = payload.resource_access?.[this.clientId]?.roles || [];
+      return [...realmRoles, ...clientRoles];
     } catch (e) {
-      console.error(e);
+      console.error('Error parsing token roles:', e);
       return [];
     }
   }
