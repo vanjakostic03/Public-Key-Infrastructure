@@ -54,7 +54,6 @@ export interface DownloadResponseDTO {
 }
 
 
-
 @Injectable({
   providedIn: 'root'
 })

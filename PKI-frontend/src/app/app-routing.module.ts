@@ -5,7 +5,7 @@ import {AuthGuard} from './authentication/auth.guard';
 
 
 export const routes: Routes = [
-  { path: 'admin-home-dashboard', component: AdminHomeDashboardComponent, canActivate: [AuthGuard] },
+  { path: 'admin-home-dashboard', component: AdminHomeDashboardComponent, canActivate: [AuthGuard], data: { role: 'ADMIN' } },
 
 ];
 @NgModule({

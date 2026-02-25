@@ -111,6 +111,29 @@ export class AuthService {
     }
   }
 
+  // auth.service.ts
+
+  getUserRoles(): string[] {
+    const token = this.getAccessToken();
+    if (!token) return [];
+
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const payload = JSON.parse(window.atob(base64));
+
+      return payload.realm_access?.roles || [];
+    } catch (e) {
+      console.error(e);
+      return [];
+    }
+  }
+
+  hasRole(expectedRole: string): boolean {
+    const roles = this.getUserRoles();
+    return roles.includes(expectedRole);
+  }
+
   logout(): void {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');

@@ -18,35 +18,26 @@ export class AppComponent implements OnInit {
     const code = urlParams.get('code');
 
     if (code) {
-      console.log('Code detected, exchanging...');
       try {
         await this.auth.exchangeCode(code);
-        console.log('Token stored successfully');
         this.router.navigate(['/admin-home-dashboard']);
       } catch (error) {
-        console.error('Token exchange failed:', error);
         this.auth.login();
       }
     } else if (!this.auth.hasToken()) {
-      console.log('No token, logging in...');
       this.auth.login();
     } else if (this.auth.isTokenExpired()) {
-      console.log('Token expired, refreshing...');
       const newToken = await this.auth.refreshAccessToken();
       if (newToken) {
-        console.log('Token refreshed, redirecting...');
         this.router.navigate(['/admin-home-dashboard']);
       } else {
-        console.log('Refresh failed, logging in...');
         this.auth.login();
       }
     } else {
-      console.log('Token exists and valid, redirecting...');
       this.router.navigate(['/admin-home-dashboard']);
     }
   }
   private redirectAfterLogin() {
-    console.log('Redirecting to admin dashboard');
     this.router.navigate(['/admin-home-dashboard']);
   }
 }

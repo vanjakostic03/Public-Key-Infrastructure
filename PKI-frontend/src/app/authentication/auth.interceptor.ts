@@ -5,13 +5,27 @@ import {catchError, from, switchMap, throwError} from 'rxjs';
 
 export const authInterceptorFn: HttpInterceptorFn = (req, next) => {
   const auth = inject(AuthService);
+
+  if (req.url.includes('/protocol/openid-connect/token')) {
+    return next(req);
+  }
+
   const token = auth.getAccessToken();
 
-
-  console.log('🔵 Interceptor fired for:', req.url);
-  console.log('🔵 Token present:', !!token);
-  console.log('🔵 Token value:', token ? token.substring(0, 20) + '...' : 'null');
-
+  if (token && auth.isTokenExpired()) {
+    return from(auth.refreshAccessToken()).pipe(
+      switchMap(newToken => {
+        const authReq = req.clone({
+          setHeaders: { Authorization: `Bearer ${newToken}` }
+        });
+        return next(authReq);
+      }),
+      catchError(err => {
+        auth.login();
+        return throwError(() => err);
+      })
+    );
+  }
   const authReq = token
     ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
     : req;
