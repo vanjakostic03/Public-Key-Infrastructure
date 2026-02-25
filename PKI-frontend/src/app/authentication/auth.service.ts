@@ -111,8 +111,6 @@ export class AuthService {
     }
   }
 
-  // auth.service.ts
-
   getUserRoles(): string[] {
     const token = this.getAccessToken();
     if (!token) return [];

@@ -46,7 +46,7 @@ export class AdminHomeDashboardComponent implements OnInit {
     password: ''
   };
 
-  constructor(private http: HttpClient, private certificateService: CertificateService) {
+  constructor(private certificateService: CertificateService) {
   }
 
   ngOnInit(): void {
@@ -77,7 +77,7 @@ export class AdminHomeDashboardComponent implements OnInit {
       endDate: new Date(this.createForm.endDate),
       requestedType: this.createForm.requestedType as 'ROOT_CA' | 'INTERMEDIATE' | 'END_ENTITY',
       parentId: this.createForm.requestedType === 'ROOT_CA' ? null : this.createForm.parentId,
-      assignToOrganizationName: this.createForm.organization, // mora biti obavezno
+      assignToOrganizationName: this.createForm.organization,
       extensions: {
         basicConstraints: (!!this.createForm.basicConstraints).toString(),
         keyCertSign: (!!this.createForm.keyCertSign).toString(),
