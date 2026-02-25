@@ -65,22 +65,13 @@ export class CertificateService {
   constructor(private http: HttpClient, private authService: AuthService) {}
 
   getAllCertificates(): Observable<CertificateResponse[]> {
-    return this.http.get<CertificateResponse[]>(this.baseUrl, {
-      headers: {
-        Authorization: `Bearer ${this.authService.getAccessToken()}`
-      }
-    });
+    return this.http.get<CertificateResponse[]>(this.baseUrl);
   }
 
   createCertificate(request: CertificateRequest) {
     return this.http.post<CertificateResponse>(
       this.baseUrl,
-      request,
-      {
-        headers: {
-          Authorization: `Bearer ${this.authService.getAccessToken()}`
-        }
-      }
+      request
     );
   }
 
@@ -89,9 +80,6 @@ export class CertificateService {
       this.baseUrl + '/download',
       request,
       {
-        headers: {
-          Authorization: `Bearer ${this.authService.getAccessToken()}`
-        },
         responseType: 'blob'
       }
     );
