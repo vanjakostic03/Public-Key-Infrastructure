@@ -40,7 +40,6 @@ public class CertificateController {
 
         CertificateResponse response = null;
         try {
-            System.out.println("upaoo");
             response = certificateService.createCertificate(dto);
         } catch (Exception e) {
             e.printStackTrace();

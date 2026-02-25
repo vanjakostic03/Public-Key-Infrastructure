@@ -242,7 +242,7 @@ public class CertificateService {
                 .organization(organization)
                 .revoked(false)
                 .type(dto.getRequestedType())
-                .user(getCurrentUser())         //za sada null, posle adminkoji je ulogovan
+                .user(getCurrentUser())
                 .serialNumber(x509Certificate.getSerialNumber().toString())
                 .privateKeyEnc(Base64.getDecoder().decode(privateKeyEnc.getCiphertext()))
                 .startDate(dto.getStartDate())
@@ -346,17 +346,9 @@ public class CertificateService {
             throw new IllegalStateException("No authentication");
         }
 
-//        System.out.println("Auth class: " + authentication.getClass().getName());
-//        System.out.println("Principal class: " + authentication.getPrincipal().getClass().getName());
-
         if (authentication.getPrincipal() instanceof Jwt jwt) {
-//            System.out.println("JWT Claims:");
-//            jwt.getClaims().forEach((key, value) ->
-//                    System.out.println("  " + key + ": " + value)
-//            );
 
             String email = jwt.getClaim("email");
-//            System.out.println("Email: " + email);
 
             if (email != null) {
                 return userRepository.findByEmail(email)
@@ -366,15 +358,5 @@ public class CertificateService {
 
         throw new IllegalStateException("Could not extract user from authentication");
     }
-
-
-
-
-//    private String getUserOrganization(Authentication user){
-//
-//    }
-
-
-
 
 }

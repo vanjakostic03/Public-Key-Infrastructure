@@ -38,16 +38,15 @@ public class SecurityConfig {
     @PostConstruct
     public void init() {
         Security.addProvider(new BouncyCastleProvider());
-    }
+    }       //provider for cryptography algorithms
 
     @Bean
     public SecretKey masterKey() {
-        String keyBase64 = System.getenv("PKI_MASTER_KEY");
+        String keyBase64 = System.getenv("PKI_MASTER_KEY");     //takes from environment variables from system
 
         if (keyBase64 == null || keyBase64.isEmpty()) {
             throw new IllegalStateException(
-                    "PKI_MASTER_KEY environment variable is not set!\n" +
-                            "Set it in IntelliJ: Run → Edit Configurations → Environment Variables"
+                    "PKI_MASTER_KEY environment variable is not set!"
             );
         }
 
@@ -126,7 +125,7 @@ public class SecurityConfig {
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(List.of("https://localhost:4200"));
+        configuration.setAllowedOriginPatterns(List.of("https://localhost:4200"));      //allows 4200 to send requests to backend
         configuration.setAllowedMethods(Arrays.asList("POST", "PUT", "GET", "OPTIONS", "DELETE", "PATCH"));
         configuration.setAllowedHeaders(List.of("*"));
         configuration.setAllowCredentials(true);

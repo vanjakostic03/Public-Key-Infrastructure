@@ -111,17 +111,21 @@ public class Utils {
         return keyPairGenerator.generateKeyPair();
     }
 
+    //from text to AES key
     public static SecretKey secretKeyFromBase64(String base64Key) {
         byte[] decoded = Base64.getDecoder().decode(base64Key);
         return new SecretKeySpec(decoded, "AES");
     }
 
+    //form text to RSA key
     public static PrivateKey base64ToPrivateKey(String base64Key) throws GeneralSecurityException {
         byte[] keyBytes = Base64.getDecoder().decode(base64Key);
         PKCS8EncodedKeySpec spec = new PKCS8EncodedKeySpec(keyBytes);
         KeyFactory kf = KeyFactory.getInstance("RSA");
         return kf.generatePrivate(spec);
     }
+
+    //AESGcmEncrypted instance has encrypted key and iv
     public AESGcmEncrypted encrypt(SecretKey key, String plaintext) throws Exception {
         byte[] iv = new byte[12];
         secureRandom.nextBytes(iv);

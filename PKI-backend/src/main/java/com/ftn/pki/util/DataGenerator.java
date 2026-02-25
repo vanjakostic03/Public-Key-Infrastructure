@@ -7,7 +7,6 @@ import java.util.Base64;
 
 public class DataGenerator {
     public static void main(String[] args) throws Exception {
-        // STAVI OVDE MASTER KEY KOJI SI GENERISALA
         String masterKeyBase64 = "GLSS123J8H/zWXaXiyO3DTG3QiuouPX3uXRHJA6KES0=";
 
         byte[] keyBytes = Base64.getDecoder().decode(masterKeyBase64);
@@ -15,7 +14,6 @@ public class DataGenerator {
 
         Utils utils = new Utils();
 
-        // Generiši DEK za organizaciju "dfgh"
         KeyGenerator keyGen = KeyGenerator.getInstance("AES");
         keyGen.init(256);
         SecretKey dek = keyGen.generateKey();

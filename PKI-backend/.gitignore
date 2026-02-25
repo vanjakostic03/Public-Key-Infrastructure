@@ -35,3 +35,7 @@ build/
 # Env i sertifikati
 .env
 /src/main/resources/localhost.p12
+
+
+/src/main/java/com/ftn/pki/util/DataGenerator.java
+/src/main/java/com/ftn/pki/util/MasterKeyGenerator.java
